@@ -15,12 +15,18 @@ async function main() {
         console.log(`¡Hola, ${options.nombre}!`);
         try {
             let data = await obtenerDatosGithub(options.nombre);
-            console.log(data);
+
+            const eventosPorTipo = contarEventosPorTipo(data);
+            console.log(`Eventos del usuario ${options.nombre}:`);
+            for (const [tipo, cantidad] of Object.entries(eventosPorTipo)) {
+                const descripcion = obtenerDescripcionEvento(tipo, cantidad)
+                console.log(descripcion);
+            }
         } catch (error) {
             console.error('Error al obtener datos de GitHub:', error.message);
         }
     } else {
-        console.log('¡Hola, mundo!');
+        console.log('No se encontró el nombre. Por favor, usa la opción -n o --nombre para especificar tu nombre.')
     }
 }
 
@@ -30,6 +36,27 @@ async function obtenerDatosGithub(usuario) {
         throw new Error('Error al obtener datos de GitHub');
     }
     return response.json();
+}
+
+function contarEventosPorTipo(eventos) {
+    return eventos.reduce((contador, evento) => {
+        const tipo = evento.type;
+        contador[tipo] = (contador[tipo] || 0) + 1;
+        return contador;
+    }, {});
+}
+
+function obtenerDescripcionEvento(tipo, cantidad) {
+    const descripciones = {
+        PushEvent: `realizó ${cantidad} push(es) a una rama en GitHub.`,
+        PullRequestEvent: `creó o actualizó ${cantidad} pull request(s).`,
+        IssuesEvent: `abrió o actualizó ${cantidad} issue(s).`,
+        ForkEvent: `hizo ${cantidad} fork(s) de repositorios.`,
+        WatchEvent: `marcó ${cantidad} repositorio(s) como favorito(s).`
+    };
+
+    // Si el tipo de evento tiene una descripción personalizada, úsala; de lo contrario, usa un mensaje genérico.
+    return descripciones[tipo] || `registró ${cantidad} evento(s) del tipo ${tipo}.`;
 }
 
 main();
